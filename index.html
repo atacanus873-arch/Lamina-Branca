@@ -1853,8 +1853,8 @@ addEventListener("keydown",e=>{
 });
 /* ================= LOBBY, SAVE E FERREIRO ================= */
 const SAVEKEY="lamina-branca-save-v2",SAVE_SLOTS_KEY="lamina-branca-slots-v3",LOBBY_LAYOUT_KEY="lamina-branca-lobby-layout-v1",FORGE={chance:[.95,.9,.8,.7,.6,.5,.4,.3,.2,.1],cost:[1,1,2,2,3,3,4,5,6,8],safe:3,price:120};
-function normalizePhaseProgress(p){const v=p&&typeof p==="object"?p:{},n=k=>Math.max(0,Math.min(ST.length,Number.isInteger(v[k])?v[k]:parseInt(v[k],10)||0));return{normal:n("normal"),hard:n("hard"),extreme:n("extreme")};}
-function phaseEnd(i){return i<ST.length-1?ST[i+1].a-1:60;}
+function normalizePhaseProgress(p){const v=p&&typeof p==="object"?p:{},n=(k,legacy)=>{let x=v[k];if(Array.isArray(x)){let count=0;while(count<ST.length&&x[count])count++;x=count;}if(x==null&&Array.isArray(v[legacy])){x=0;while(x<ST.length&&v[legacy][x])x++;}if(typeof x==="boolean")x=x?1:0;return Math.max(0,Math.min(ST.length,Number.isInteger(x)?x:parseInt(x,10)||0));};return{normal:n("normal","normalClear"),hard:n("hard","hardClear"),extreme:n("extreme","extremeClear")};}
+function phaseEnd(i){return i===0?10:i<ST.length-1?ST[i+1].a-1:60;}
 function canStartPhase(w,diff,i){return Number.isInteger(i)&&i>=0&&i<ST.length&&i<=normalizePhaseProgress(w.phaseProgress)[diff];}
 function completePhase(w){const i=Math.max(0,Math.min(ST.length-1,w.campaignStage||0)),p=normalizePhaseProgress(w.phaseProgress),d=w.diff||"normal",before=p[d];p[d]=Math.max(p[d],i+1);w.phaseProgress=p;if(i<ST.length-1){w.campaignStage=i+1;w.wave=ST[i+1].a;}saveGame(w);enterLobby(w);showBanner(w,"Fase concluída!",ST[i].n+" · "+(d==="hard"?"Difícil":d==="extreme"?"Extremo":"Normal"));showToast(w,p[d]>before?"Próxima fase liberada":"Progresso salvo");}
 let activeSlot=0, pendingNewSlot=null, lobbyEdit=false, dragObj=null;
@@ -1966,7 +1966,7 @@ function loadGame(w,sv){
   beginRun0(w,sv.cls);
   if(sv.slot!=null) activeSlot=sv.slot;
   w.slot=activeSlot;
-  Object.assign(w,{wave:sv.wave,campaignStage:Number.isInteger(sv.campaignStage)?sv.campaignStage:stageOf(sv.wave),phaseProgress:normalizePhaseProgress(sv.phaseProgress),level:sv.level,xp:sv.xp,points:sv.points,alloc:sv.alloc,coins:sv.coins,owned:sv.owned||[],equipped:Object.assign(emptyEq(),sv.equipped),loadout:sv.loadout||[0,1,2,3,4,5],skOwned:sv.skOwned||[0,1,2,3,4,5],potions:sv.potions||{"pot-hp":0,"pot-st":0},enh:sv.enh||{},stones:sv.stones||0,kills:sv.kills||0,inv:sv.inv||{},relics:sv.relics||{feather:0,hammer:0,snow:0},fragments:sv.fragments||0,diff:sv.diff||"normal"});
+  Object.assign(w,{wave:sv.wave,campaignStage:Number.isInteger(sv.campaignStage)?sv.campaignStage:stageOf(sv.wave),phaseProgress:normalizePhaseProgress(sv.phaseProgress||sv),level:sv.level,xp:sv.xp,points:sv.points,alloc:sv.alloc,coins:sv.coins,owned:sv.owned||[],equipped:Object.assign(emptyEq(),sv.equipped),loadout:sv.loadout||[0,1,2,3,4,5],skOwned:sv.skOwned||[0,1,2,3,4,5],potions:sv.potions||{"pot-hp":0,"pot-st":0},enh:sv.enh||{},stones:sv.stones||0,kills:sv.kills||0,inv:sv.inv||{},relics:sv.relics||{feather:0,hammer:0,snow:0},fragments:sv.fragments||0,diff:sv.diff||"normal"});
   applyStats(w);enterLobby(w);
 }
 function enterLobby(w){
