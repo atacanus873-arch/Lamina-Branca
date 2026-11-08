@@ -1856,7 +1856,7 @@ const SAVEKEY="lamina-branca-save-v2",SAVE_SLOTS_KEY="lamina-branca-slots-v3",LO
 function normalizePhaseProgress(p){const v=p&&typeof p==="object"?p:{},n=k=>Math.max(0,Math.min(ST.length,Number.isInteger(v[k])?v[k]:parseInt(v[k],10)||0));return{normal:n("normal"),hard:n("hard"),extreme:n("extreme")};}
 function phaseEnd(i){return i<ST.length-1?ST[i+1].a-1:60;}
 function canStartPhase(w,diff,i){return Number.isInteger(i)&&i>=0&&i<ST.length&&i<=normalizePhaseProgress(w.phaseProgress)[diff];}
-function completePhase(w){const i=Math.max(0,Math.min(ST.length-1,w.campaignStage||0)),p=normalizePhaseProgress(w.phaseProgress),d=w.diff||"normal",before=p[d];p[d]=Math.max(p[d],i+1);w.phaseProgress=p;saveGame(w);enterLobby(w);showBanner(w,"Fase concluída!",ST[i].n+" · "+(d==="hard"?"Difícil":d==="extreme"?"Extremo":"Normal"));showToast(w,p[d]>before?"Próxima fase liberada":"Progresso salvo");}
+function completePhase(w){const i=Math.max(0,Math.min(ST.length-1,w.campaignStage||0)),p=normalizePhaseProgress(w.phaseProgress),d=w.diff||"normal",before=p[d];p[d]=Math.max(p[d],i+1);w.phaseProgress=p;if(i<ST.length-1){w.campaignStage=i+1;w.wave=ST[i+1].a;}saveGame(w);enterLobby(w);showBanner(w,"Fase concluída!",ST[i].n+" · "+(d==="hard"?"Difícil":d==="extreme"?"Extremo":"Normal"));showToast(w,p[d]>before?"Próxima fase liberada":"Progresso salvo");}
 let activeSlot=0, pendingNewSlot=null, lobbyEdit=false, dragObj=null;
 
 /* ---- 6 SAVE SLOTS ---- */
