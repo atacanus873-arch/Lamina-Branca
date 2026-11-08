@@ -1858,7 +1858,7 @@ function normalizePhaseProgress(p){const v=p&&typeof p==="object"?p:{},n=(k,lega
 function migrateLegacyPhaseProgress(p){const q=normalizePhaseProgress(p),ends=[0,11,15,20,26,32,37,39,50,60];for(const k of["normal","hard","extreme"])q[k]=ends[q[k]]??Math.min(PHASE_COUNT,q[k]);return q;}
 function phaseEnd(i){return i+1;}
 function canStartPhase(w,diff,i){return Number.isInteger(i)&&i>=0&&i<PHASE_COUNT&&i<=normalizePhaseProgress(w.phaseProgress)[diff];}
-function completePhase(w){const i=Math.max(0,Math.min(PHASE_COUNT-1,w.campaignStage||0)),p=normalizePhaseProgress(w.phaseProgress),d=w.diff||"normal",before=p[d];p[d]=Math.max(p[d],i+1);w.phaseProgress=p;if(i<PHASE_COUNT-1){w.campaignStage=i+1;w.wave=i+2;}saveGame(w);enterLobby(w);showBanner(w,"Fase concluída!","Fase "+(i+1)+" · "+ST[stageOf(i+1)].n+" · "+(d==="hard"?"Difícil":d==="extreme"?"Extremo":"Normal"));showToast(w,p[d]>before?"Próxima fase liberada":"Progresso salvo");}
+function completePhase(w){const i=Math.max(0,Math.min(PHASE_COUNT-1,w.campaignStage||0)),p=normalizePhaseProgress(w.phaseProgress),d=w.diff||"normal",before=p[d];p[d]=Math.max(p[d],i+1);w.phaseProgress=p;const next=(i+1)%PHASE_COUNT;w.campaignStage=next;w.wave=next+1;w.inLobby=false;w.phase="playing";saveGame(w);startWave(w);showBanner(w,i===PHASE_COUNT-1?"Todas as fases concluídas!":"Fase concluída!","Fase "+(i+1)+" · "+ST[stageOf(i+1)].n);showToast(w,i===PHASE_COUNT-1?"Recomeçando na Fase 1":p[d]>before?"Indo para a Fase "+(next+1):"Fase concluída");}
 let activeSlot=0, pendingNewSlot=null, lobbyEdit=false, dragObj=null;
 
 /* ---- 6 SAVE SLOTS ---- */
