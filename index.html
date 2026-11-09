@@ -606,7 +606,7 @@ async function loadAssets(){
   const names=["player","orc","armored","boss","wolf","wolfMetal","wolfBoss","slash","impact","loot","props","ground","ground2","pl_mage","pl_archer","pl_necro","pl_warrior","robMet","robSold","robDrone","spider","ground3","props2","fae","skel","gob","arch2","larva","crab","skullboss"];
   const files=["player","orc","orc-armored","boss","wolf","wolf-metal","wolf-boss","slash","impact","loot","props","ground","ground2","pl_mage","pl_archer","pl_necro","warrior","rob_met","rob_sold","rob_drone","spider","ground3","props2","fae","skel","gob","arch2","larva","crab","skullboss"];
   const imgs=await Promise.all(files.map(f=>loadImage(SPR[f])));
-  const dims={props2:[2,2],skullboss:[4,1],pl_mage:[6,4],pl_archer:[6,4],pl_necro:[6,4],pl_warrior:[6,4],spider:[4,1],wolfBoss:[1,1],slash:[2,2],impact:[2,2],loot:[2,2],props:[2,2]};
+  const dims={props2:[2,2],skullboss:[4,1],pl_mage:[6,4],pl_archer:[6,4],pl_necro:[6,4],pl_warrior:[9,5],spider:[4,1],wolfBoss:[1,1],slash:[2,2],impact:[2,2],loot:[2,2],props:[2,2]};
   names.forEach((n,i)=>{assets[n]=(n==="ground"||n==="ground2"||n==="ground3")?imgs[i]:sheet(imgs[i],...(dims[n]||[4,4]));});
   for(const n of["player","orc","armored","boss","wolf","wolfMetal"])assets[n].img=enhance(assets[n].img);
 }
@@ -639,6 +639,27 @@ function drawFrame(ctx,s,col,row,dx,dy,dw,dh){
 function spr(ctx,s,col,row,cx,cy,dw,dh,rot=0,sx=1,sy=1,col2,mix=0){
   ctx.save();ctx.translate(cx,cy);ctx.rotate(rot);ctx.scale(sx,sy);drawFrame(ctx,s,col,row,-dw/2,-dh+8,dw,dh);
   if(mix>.02){ctx.globalAlpha*=mix;drawFrame(ctx,s,col2,row,-dw/2,-dh+8,dw,dh);}ctx.restore();
+}
+function sprWarrior(ctx,s,p,cx,cy,dw,dh,rot=0,sx=1,sy=1,walking=false){
+  const attack=[[2,2],[2,4],[3,3],[4,8]];
+  let row,col,nextCol,mix=0,flip=false;
+  if(p.atkT>0){
+    const frame=Math.min(attack.length-1,Math.floor(clamp(1-p.atkT/.24,0,.999)*attack.length));
+    [row,col]=attack[frame];
+    flip=p.row===1;
+  }else{
+    let start,count;
+    if(p.row===0){row=0;start=0;count=6;}
+    else if(p.row===1){row=1;start=0;count=5;}
+    else if(p.row===2){row=1;start=4;count=5;}
+    else{row=0;start=6;count=3;}
+    const phase=walking?p.anim:0,idx=Math.floor(phase)%count;
+    col=start+idx;nextCol=start+((idx+1)%count);mix=walking?phase%1:0;
+  }
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(rot);ctx.scale(sx*(flip?-1:1),sy);
+  drawFrame(ctx,s,col,row,-dw/2,-dh+8,dw,dh);
+  if(mix>.02){ctx.globalAlpha*=mix;drawFrame(ctx,s,nextCol,row,-dw/2,-dh+8,dw,dh);}
+  ctx.restore();
 }
 function shadow(ctx,x,y,rx,a=.38){
   ctx.save();ctx.fillStyle=`rgba(0,0,0,${a})`;ctx.beginPath();ctx.ellipse(x,y+3,rx,rx*.36,0,0,7);ctx.fill();ctx.restore();
@@ -1663,9 +1684,9 @@ function renderWorld(ctx,w,vw,vh,dpr,dt){
     const size=72,sx=1-sq,sy=1+sq,atk=p.atkT>0?1+p.atkT*.5:1;
     if(p.invuln>0&&p.dodgeT<=0&&!(p.shield>0)&&((p.invuln*20)|0)%2===0)ctx.globalAlpha=.5;
     if(cp&&p.row!==3)drawCape(ctx,X,Y+bob,p,cp,t);
-    spr(ctx,ps,col,p.row,X,Y+bob,size*atk,size*atk,(snap?0:p.lean)+(p.atkT>0&&!snap?Math.cos(p.aim)*.08:0),sx,sy,col2,mix);ctx.globalAlpha=1;
+    const spriteRot=(snap?0:p.lean)+(p.atkT>0&&!snap?Math.cos(p.aim)*.08:0),spriteH=w.cls==="warrior"&&ps.cols===9&&ps.rows===5?88:72;const drawPlayerSprite=(dw,dh)=>{if(w.cls==="warrior"&&ps.cols===9&&ps.rows===5)sprWarrior(ctx,ps,p,X,Y+bob,dw,dh,spriteRot,sx,sy,walking);else spr(ctx,ps,col,p.row,X,Y+bob,dw,dh,spriteRot,sx,sy,col2,mix);};drawPlayerSprite(size*atk,spriteH*atk);ctx.globalAlpha=1;
     if(cp&&p.row===3)drawCape(ctx,X,Y+bob,p,cp,t);drawProps(ctx,X,Y+bob,p,w,t);
-    if(p.flash>0){ctx.save();ctx.globalAlpha=p.flash*.7;ctx.globalCompositeOperation="lighter";spr(ctx,ps,col,p.row,X,Y+bob,size,size,p.lean,sx,sy);ctx.restore();}
+    if(p.flash>0){ctx.save();ctx.globalAlpha=p.flash*.7;ctx.globalCompositeOperation="lighter";drawPlayerSprite(size,spriteH);ctx.restore();}
   }});
   items.sort((a,b)=>a.y-b.y);for(const it of items)it.draw();
 
